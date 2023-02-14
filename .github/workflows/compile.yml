@@ -33,7 +33,7 @@ jobs:
         echo "obj-y += kernelsu/" >> drivers/Makefile
         echo "[+] Done."
     - name: Android kernel build
-      uses: lemniskett/android-kernel-actions@master
+      uses: ryzntx/android-kernel-actions@master
       id: build
       env:
         KERNEL_PATH: source
