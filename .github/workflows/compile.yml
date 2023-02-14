@@ -1,0 +1,50 @@
+name: Kernel builder chime based on Greenforce-project kernel
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout kernel source
+      uses: actions/checkout@v2
+      with:
+        repository: greenforce-project/kernel_xiaomi_citrus_sm6115
+        ref: sc-qpr3
+        path: source
+    - name: Checkout zipper
+      uses: actions/checkout@v2
+      with:
+        repository: lemniskett/AnyKernel3
+        path: zipper
+    - name: Integrate KernelSU
+      run: |
+        cd source
+        echo "[+] Append kernel params to kprobes"
+        echo "CONFIG_KPROBES=y" >> arch/arm64/configs/vendor/bengal-perf_defconfig
+        echo "CONFIG_HAVE_KPROBES=y" >> arch/arm64/configs/vendor/bengal-perf_defconfig
+        echo "CONFIG_KPROBE_EVENTS=y" >> arch/arm64/configs/vendor/bengal-perf_defconfig
+        git clone https://github.com/tiann/KernelSU
+        cd KernelSU
+        git stash && git pull
+        cd ../
+        cp -r KernelSU/kernel drivers/kernelsu
+        echo "[+] Add kernel su driver to Makefile"
+        echo "obj-y += kernelsu/" >> drivers/Makefile
+        echo "[+] Done."
+    - name: Android kernel build
+      uses: lemniskett/android-kernel-actions@master
+      id: build
+      env:
+        KERNEL_PATH: source
+      with:
+        arch: arm64
+        compiler: proton-clang/master/binutils
+        defconfig: vendor/bengal-perf_defconfig
+        image: Image
+    - name: Upload Build
+      uses: actions/upload-artifact@v3
+      with:
+        name: Image
+        #path: /home/runner/work/kernelsu-xiaomi-juice/kernelsu-xiaomi-juice/zipper
+        path: /home/runner/work/kernel-su_xiaomi_chime/kernel-su_xiaomi_chime/zipper
